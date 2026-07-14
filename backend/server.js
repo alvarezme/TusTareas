@@ -1,51 +1,42 @@
 require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
-const sequelize = require('./config/db');
+const sequelize = require('./configuraciones/db');
 
-const User = require('./models/User');
-const Task = require('./models/Task');
+const Usuario = require('./modelos/Usuario');
+const Tarea = require('./modelos/Tarea');
 
+// Relaciones explícitas antes de sincronizar para evitar errores al sincronizar la base de datos
+Usuario.hasMany(Tarea, { foreignKey: 'usuarioId' });
+Tarea.belongsTo(Usuario, { foreignKey: 'usuarioId' });
 
-// 1. IMPORTAR LAS RUTAS DE AUTENTICACIÓN Y TAREAS
-const authRoutes = require('./routes/authRoutes');
-const taskRoutes = require('./routes/taskRoutes');
+const rutasAutenticacion = require('./rutas/rutasAutenticacion');
+const rutasTareas = require('./rutas/rutasTareas');
 
 const app = express();
 
 app.use(cors({
-  exposedHeaders: ['user-id'],
-  allowedHeaders: ['Content-Type', 'user-id']
+  exposedHeaders: ['id-usuario'],
+  allowedHeaders: ['Content-Type', 'id-usuario']
 }));
 app.use(express.json());
 
-// 2. VINCULAR LAS RUTAS AL SISTEMA
-app.use('/api/auth', authRoutes);
-app.use('/api/tasks', taskRoutes);
+app.use('/api/autenticacion', rutasAutenticacion);
+app.use('/api/tareas', rutasTareas);
 
-app.get('/ping', (req, res) => {
-  res.json({ message: '¡Servidor activo y respondiendo! 🚀' });
-});
+const PUERTO = process.env.PORT || 3000;
 
-const PORT = process.env.PORT || 3000;
-
-async function startServer() {
+async function iniciarServidor() {
   try {
     await sequelize.authenticate();
-    console.log('✅ Conexión establecida con la base de datos SQLite.');
-
-    await sequelize.sync({ alter: false });
-    console.log('✅ Tablas de la base de datos sincronizadas correctamente.');
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-    });
-
+    // Usamos sync normal sin alter para proteger los datos de SQLite
+    await sequelize.sync();
+    console.log('La base esta andando');
+    app.listen(PUERTO, () => console.log(`🚀 Servidor en http://localhost:${PUERTO}`));
   } catch (error) {
-    console.error('❌ Error crítico al iniciar el servidor:', error);
+    console.error('Error al iniciar la base de datos', error);
     process.exit(1);
   }
 }
 
-startServer();
+iniciarServidor();
