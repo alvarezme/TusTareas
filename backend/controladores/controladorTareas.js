@@ -6,7 +6,7 @@ const obtenerTareas = async (req, res) => {
     const usuarioId = req.headers['id-usuario'];
     if (!usuarioId) return res.status(401).json({ mensaje: 'No autorizado.' });
 
-    const tareas = await Tarea.findAll({ where: { usuarioId } });
+    const tareas = await Tarea.findAll({ where: { usuarioId },order: [['createdAt', 'DESC']] }); //agregue el order para que se enlisten desde la mas nueva a la mas antigua
     res.json(tareas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener tareas.' });
