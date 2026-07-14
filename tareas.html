@@ -13,7 +13,7 @@
 </head>
 <body>
 
-  <!BARRA DE NAVEGACIÓN>
+  <!-- BARRA DE NAVEGACIÓN -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center gap-2" href="#">
@@ -21,31 +21,30 @@
         <span class="fw-bold">TaskMaster</span>
       </a>
       <div class="ms-auto d-flex align-items-center">
-        <span class="text-light me-3" id="user-display-name">¡Hola!</span>
-        <button class="btn btn-outline-danger btn-sm" id="btn-logout">
+        <button class="btn btn-outline-danger btn-sm" id="btn-cerrar-sesion">
           <i class="bi bi-box-arrow-right me-1"></i>Salir
         </button>
       </div>
     </div>
   </nav>
 
-  <!CONTENIDO PRINCIPAL>
+  <!-- CONTENIDO PRINCIPAL -->
   <main class="container my-5">
     <section class="row">
       
-      <!Columna Izquierda: Formulario de creación>
+      <!-- Columna Izquierda: Formulario de creación -->
       <div class="col-lg-4 mb-4">
         <div class="card shadow-sm border-0 sticky-top" style="top: 20px; z-index: 1020;">
           <div class="card-body p-4">
             <h5 class="card-title fw-bold text-primary mb-3">Nueva Tarea</h5>
-            <form id="task-form">
+            <form id="formulario-tarea">
               <div class="mb-3">
-                <label for="task-title" class="form-label">Título</label>
-                <input type="text" id="task-title" class="form-control" placeholder="Ej: Estudiar para el examen" required>
+                <label for="tarea-titulo" class="form-label">Título</label>
+                <input type="text" id="tarea-titulo" class="form-control" placeholder="Ej: Estudiar para el examen" required>
               </div>
               <div class="mb-3">
-                <label for="task-desc" class="form-label">Descripción</label>
-                <textarea id="task-desc" class="form-control" rows="3" placeholder="Añade más detalles..."></textarea>
+                <label for="tarea-desc" class="form-label">Descripción</label>
+                <textarea id="tarea-desc" class="form-control" rows="3" placeholder="Añade más detalles..."></textarea>
               </div>
               <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
                 <i class="bi bi-plus-lg me-1"></i> Guardar Tarea
@@ -55,30 +54,16 @@
         </div>
       </div>
 
-      <!Columna Derecha: Listado y Filtros>
+      <!-- Columna Derecha: Listado -->
       <div class="col-lg-8">
         <div class="card shadow-sm border-0 p-4">
           <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
             <h4 class="fw-bold text-dark m-0">Mis Pendientes</h4>
-            
-            <div class="btn-group shadow-sm" role="group">
-              <input type="radio" class="btn-check" name="task-filter" id="filter-all" checked>
-              <label class="btn btn-outline-secondary" for="filter-all">Todas</label>
-
-              <input type="radio" class="btn-check" name="task-filter" id="filter-pending">
-              <label class="btn btn-outline-secondary" for="filter-pending">Pendientes</label>
-
-              <input type="radio" class="btn-check" name="task-filter" id="filter-completed">
-              <label class="btn btn-outline-secondary" for="filter-completed">Completadas</label>
-            </div>
           </div>
 
-          <!Contenedor de Tareas>
-          <div id="tasks-container" class="list-group gap-2">
-            <div class="text-center py-5 text-muted" id="tasks-placeholder">
-              <i class="bi bi-journal-x fs-1"></i>
-              <p class="mt-2">No hay tareas creadas todavía.</p>
-            </div>
+          <!-- Contenedor dinámico donde caerán las tareas -->
+          <div id="contenedor-tareas" class="list-group gap-2">
+            <!-- El script tareas.js reemplazará este bloque automáticamente -->
           </div>
         </div>
       </div>
@@ -86,9 +71,38 @@
     </section>
   </main>
 
+  <!-- MODAL FLOTANTE PARA EDITAR TAREA -->
+  <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editTaskModalLabel">Editar Tarea</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formulario-editar-tarea">
+            <input type="hidden" id="edit-tarea-id">
+            <div class="mb-3">
+              <label for="edit-tarea-titulo" class="form-label">Título</label>
+              <input type="text" class="form-control" id="edit-tarea-titulo" required>
+            </div>
+            <div class="mb-3">
+              <label for="edit-tarea-desc" class="form-label">Descripción</label>
+              <textarea class="form-control" id="edit-tarea-desc" rows="3"></textarea>
+            </div>
+            <div class="text-end">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="footer mt-auto py-3 bg-white border-top">
     <div class="container text-center text-muted">
-      <small>© 2026 TaskMaster - Cilsa </small>
+      <small>© 2026 Tus Tareas - Cilsa</small>
     </div>
   </footer>
 
