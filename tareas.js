@@ -1,202 +1,157 @@
-const API_URL = 'http://localhost:3000/api/tasks';
+const URL_API = 'http://localhost:3000/api/tareas';
+const datosUsuario = JSON.parse(localStorage.getItem('usuario'));
 
-// 1. RECUPERAR EL USUARIO GUARDADO
-const rawUser = localStorage.getItem('user');
-let user = null;
-
-try {
-  user = rawUser ? JSON.parse(rawUser) : null;
-} catch (e) {
-  console.error("Error al parsear el usuario de localStorage:", e);
-}
-
-// Redirección de seguridad: si no hay sesión iniciada, de vuelta al login
-if (!user || (!user.id && !user.user?.id)) {
-  alert('Por favor, inicia sesión para acceder a tus tareas.');
+// Si no inició sesión, lo devuelve al index
+if (!datosUsuario) {
   window.location.href = 'index.html';
 }
 
-// Tolerancia de ID: Extrae el ID real si el login guardó el objeto anidado { user: { id: ... } }
-const userId = user.id || (user.user && user.user.id);
-const userName = user.name || (user.user && user.user.name) || 'Usuario';
+const contenedorTareas = document.getElementById('contenedor-tareas');
+const formularioTarea = document.getElementById('formulario-tarea');
+const botonCerrarSesion = document.getElementById('btn-cerrar-sesion');
 
-// 2. ELEMENTOS DEL DOM (Ajustados con tus IDs exactos del HTML)
-const taskForm = document.getElementById('task-form');
-const taskTitleInput = document.getElementById('task-title');
-const taskDescInput = document.getElementById('task-desc');
-const tasksContainer = document.getElementById('tasks-container');
-const btnLogout = document.getElementById('btn-logout');
-const userDisplayName = document.getElementById('user-display-name');
-
-// Elementos de filtros
-const filterAll = document.getElementById('filter-all');
-const filterPending = document.getElementById('filter-pending');
-const filterCompleted = document.getElementById('filter-completed');
-
-// Array local para almacenar temporalmente las tareas
-let allTasks = [];
-
-// Mostrar el nombre del usuario en el Navbar
-if (userDisplayName) {
-  userDisplayName.textContent = `¡Hola, ${userName}!`;
+// Helper para las cabeceras con el id de usuario
+function obtenerCabeceras() {
+  return {
+    'Content-Type': 'application/json',
+    'id-usuario': datosUsuario.id
+  };
 }
 
-// Cabeceras configuradas con el identificador del usuario
-const getHeaders = () => ({
-  'Content-Type': 'application/json',
-  'user-id': userId
-});
-
-// 3. CARGAR TAREAS DESDE EL SERVIDOR
-async function loadTasks() {
+// Cargar tareas del servidor
+async function cargarTareas() {
   try {
-    const response = await fetch(API_URL, {
-      method: 'GET',
-      headers: getHeaders()
-    });
-
-    if (!response.ok) throw new Error('Error al obtener las tareas de la base de datos');
-
-    allTasks = await response.json();
-    console.log("Tareas cargadas del servidor:", allTasks); // Diagnóstico en consola (F12)
-    applyFilterAndRender(); 
+    const respuesta = await fetch(URL_API, { headers: obtenerCabeceras() });
+    const tareas = await respuesta.json();
+    renderizarTareas(tareas);
   } catch (error) {
-    console.error('Error de carga:', error);
+    console.error('Error al cargar lista:', error);
   }
 }
 
-// 4. RENDERIZAR TAREAS SEGÚN EL FILTRO ACTIVO
-function applyFilterAndRender() {
-  let filteredTasks = [...allTasks];
+// Dibujar tareas en el HTML
+function renderizarTareas(tareas) {
+  contenedorTareas.innerHTML = '';
 
-  if (filterPending && filterPending.checked) {
-    filteredTasks = allTasks.filter(task => !task.completed);
-  } else if (filterCompleted && filterCompleted.checked) {
-    filteredTasks = allTasks.filter(task => task.completed);
-  }
-
-  renderTasks(filteredTasks);
-}
-
-function renderTasks(tasks) {
-  tasksContainer.innerHTML = '';
-
-  if (!tasks || tasks.length === 0) {
-    tasksContainer.innerHTML = `
-      <div class="text-center py-5 text-muted" id="tasks-placeholder">
-        <i class="bi bi-journal-x fs-1"></i>
-        <p class="mt-2">No hay tareas creadas todavía.</p>
-      </div>
-    `;
+  if (tareas.length === 0) {
+    contenedorTareas.innerHTML = '<p class="text-center text-muted">No tienes tareas creadas.</p>';
     return;
   }
 
-  tasks.forEach(task => {
-    // Tolerancia de propiedad ID (Sequelize usa id)
-    const taskId = task.id; 
-    
+  tareas.forEach(tarea => {
     const div = document.createElement('div');
-    div.className = `list-group-item d-flex justify-content-between align-items-center p-3 border rounded shadow-sm bg-white mb-2 ${task.completed ? 'opacity-75' : ''}`;
+    div.className = 'list-group-item d-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-white shadow-sm';
     
+    const tituloEscapado = tarea.titulo.replace(/'/g, "\\'");
+    const descEscapada = tarea.descripcion ? tarea.descripcion.replace(/'/g, "\\'") : '';
+
     div.innerHTML = `
-      <div class="d-flex align-items-start gap-3">
-        <input class="form-check-input mt-1" type="checkbox" ${task.completed ? 'checked' : ''} onclick="toggleTask('${taskId}', ${task.completed})">
-        <div>
-          <span class="fw-bold d-block ${task.completed ? 'text-decoration-line-through text-muted' : 'text-dark'}">${task.title}</span>
-          ${task.description ? `<small class="text-muted d-block">${task.description}</small>` : ''}
-        </div>
+      <div>
+        <input type="checkbox" class="form-check-input me-2" ${tarea.completada ? 'checked' : ''} onclick="alternarEstado('${tarea.id}', ${tarea.completada})">
+        <span class="${tarea.completada ? 'text-decoration-line-through text-muted' : 'fw-bold'}">${tarea.titulo}</span>
+        <small class="d-block text-muted">${tarea.descripcion || ''}</small>
       </div>
-      <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${taskId}')">
-        <i class="bi bi-trash"></i>
-      </button>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-primary" onclick="abrirModalEdicion('${tarea.id}', '${tituloEscapado}', '${descEscapada}')">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger" onclick="eliminarTarea('${tarea.id}')">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
     `;
-    tasksContainer.appendChild(div);
+    contenedorTareas.appendChild(div);
   });
 }
 
-// 5. GUARDAR NUEVA TAREA
-if (taskForm) {
-  taskForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Crear Tarea
+formularioTarea.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const titulo = document.getElementById('tarea-titulo').value.trim();
+  const descripcion = document.getElementById('tarea-desc').value.trim();
 
-    const title = taskTitleInput.value.trim();
-    const description = taskDescInput.value.trim();
-
-    if (!title) return;
-
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ title, description })
-      });
-
-      if (!response.ok) throw new Error('Error al guardar la tarea en el servidor');
-
-      // Limpiar los inputs del formulario
-      taskTitleInput.value = '';
-      taskDescInput.value = '';
-      
-      // Asegurar que el filtro vuelva a "Todas" para que la tarea nueva aparezca inmediatamente
-      if (filterAll) {
-        filterAll.checked = true;
-      }
-      
-      // Recargar tareas
-      loadTasks();
-    } catch (error) {
-      alert(error.message);
+  try {
+    const respuesta = await fetch(URL_API, {
+      method: 'POST',
+      headers: obtenerCabeceras(),
+      body: JSON.stringify({ titulo, descripcion })
+    });
+    if (respuesta.ok) {
+      formularioTarea.reset();
+      cargarTareas();
     }
-  });
-}
-
-// 6. MARCAR COMO COMPLETADA / PENDIENTE
-window.toggleTask = async (id, currentStatus) => {
-  try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ completed: !currentStatus })
-    });
-
-    if (!response.ok) throw new Error('Error al actualizar la tarea');
-    loadTasks();
   } catch (error) {
-    alert(error.message);
-  }
-};
-
-// 7. ELIMINAR UNA TAREA
-window.deleteTask = async (id) => {
-  if (!confirm('¿Seguro que deseas eliminar esta tarea?')) return;
-
-  try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders()
-    });
-
-    if (!response.ok) throw new Error('Error al eliminar la tarea');
-    loadTasks();
-  } catch (error) {
-    alert(error.message);
-  }
-};
-
-// 8. FILTROS (Vincular eventos para cambiar de vista)
-[filterAll, filterPending, filterCompleted].forEach(filterInput => {
-  if (filterInput) {
-    filterInput.addEventListener('change', applyFilterAndRender);
+    alert('No se pudo crear la tarea');
   }
 });
 
-// 9. CERRAR SESIÓN
-if (btnLogout) {
-  btnLogout.addEventListener('click', () => {
-    localStorage.removeItem('user');
-    window.location.href = 'index.html';
-  });
-}
+// Modificar (Cambiar estado completado/pendiente)
+window.alternarEstado = async (id, estadoActual) => {
+  try {
+    await fetch(`${URL_API}/${id}`, {
+      method: 'PUT',
+      headers: obtenerCabeceras(),
+      body: JSON.stringify({ completada: !estadoActual })
+    });
+    cargarTareas();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
-// Cargar las tareas al iniciar la página
-loadTasks();
+// Eliminar Tarea
+window.eliminarTarea = async (id) => {
+  if (!confirm('¿Deseas eliminar esta tarea?')) return;
+  try {
+    await fetch(`${URL_API}/${id}`, {
+      method: 'DELETE',
+      headers: obtenerCabeceras()
+    });
+    cargarTareas();
+  } catch (error) {
+    alert('Error al eliminar');
+  }
+};
+
+// Control del Modal de Edición
+let modalInstancia = null;
+window.abrirModalEdicion = (id, titulo, descripcion) => {
+  document.getElementById('edit-tarea-id').value = id;
+  document.getElementById('edit-tarea-titulo').value = titulo;
+  document.getElementById('edit-tarea-desc').value = descripcion;
+
+  if (!modalInstancia) {
+    modalInstancia = new bootstrap.Modal(document.getElementById('editTaskModal'));
+  }
+  modalInstancia.show();
+};
+
+document.getElementById('formulario-editar-tarea').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('edit-tarea-id').value;
+  const titulo = document.getElementById('edit-tarea-titulo').value.trim();
+  const descripcion = document.getElementById('edit-tarea-desc').value.trim();
+
+  try {
+    const respuesta = await fetch(`${URL_API}/${id}`, {
+      method: 'PUT',
+      headers: obtenerCabeceras(),
+      body: JSON.stringify({ titulo, descripcion })
+    });
+    if (respuesta.ok) {
+      modalInstancia.hide();
+      cargarTareas();
+    }
+  } catch (error) {
+    alert('Error al guardar cambios');
+  }
+});
+
+// Cerrar Sesión
+botonCerrarSesion.addEventListener('click', () => {
+  localStorage.removeItem('usuario');
+  window.location.href = 'index.html';
+});
+
+// Inicializar vista
+cargarTareas();
