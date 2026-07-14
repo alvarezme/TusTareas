@@ -7,6 +7,7 @@ const sequelize = require('./config/db');
 const User = require('./models/User');
 const Task = require('./models/Task');
 
+
 // 1. IMPORTAR LAS RUTAS DE AUTENTICACIÓN Y TAREAS
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
@@ -34,7 +35,7 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('✅ Conexión establecida con la base de datos SQLite.');
 
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: false });
     console.log('✅ Tablas de la base de datos sincronizadas correctamente.');
 
     app.listen(PORT, () => {
