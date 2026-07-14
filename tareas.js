@@ -47,13 +47,13 @@ function renderizarTareas(tareas) {
 
     div.innerHTML = `
       <div class="d-flex align-items-start flex-grow-1 me-3" style="min-width: 0;">
-        <input type="checkbox" class="form-check-input me-2 mt-1 flex-shrink-0" ${tarea.completada ? 'checked' : ''} onclick="alternarEstado('${tarea.id}', ${tarea.completada})">
         <div class="text-break">
           <span class="${tarea.completada ? 'text-decoration-line-through text-muted' : 'fw-bold'}">${tarea.titulo}</span>
           <small class="d-block text-muted mt-1">${tarea.descripcion || ''}</small>
         </div>
       </div>
-      <div class="d-flex gap-2 flex-shrink-0">
+      <div class="d-flex gap-2 flex-shrink-0 align-items-center">
+        <input type="checkbox" class="form-check-input me-0 mt-0 flex-shrink-0" ${tarea.completada ? 'checked' : ''} onclick="alternarEstado('${tarea.id}', ${tarea.completada})"style="width: 31px; height: 31px; cursor: pointer;">
         <button class="btn btn-sm btn-outline-primary" onclick="abrirModalEdicion('${tarea.id}', '${tituloEscapado}', '${descEscapada}')">
           <i class="bi bi-pencil"></i>
         </button>
