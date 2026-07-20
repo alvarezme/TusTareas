@@ -15,11 +15,11 @@ const Tarea = sequelize.define('Tarea', {
     type: DataTypes.TEXT,
     defaultValue: ''
   },
-  completada: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+  estado: {
+    type: DataTypes.ENUM('pendiente', 'en curso', 'en espera', 'finalizada'),
+    defaultValue: 'pendiente',
+    allowNull: false
   },
-  // Campo explícito para evitar problemas de sincronización
   usuarioId: {
     type: DataTypes.UUID,
     allowNull: true
