@@ -6,7 +6,10 @@ const obtenerTareas = async (req, res) => {
     const usuarioId = req.headers['id-usuario'];
     if (!usuarioId) return res.status(401).json({ mensaje: 'No autorizado.' });
 
-    const tareas = await Tarea.findAll({ where: { usuarioId },order: [['createdAt', 'DESC']] }); //agregue el order para que se enlisten desde la mas nueva a la mas antigua
+    const tareas = await Tarea.findAll({ 
+      where: { usuarioId },
+      order: [['createdAt', 'DESC']] 
+    }); 
     res.json(tareas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener tareas.' });
@@ -36,7 +39,7 @@ const crearTarea = async (req, res) => {
 const actualizarTarea = async (req, res) => {
   try {
     const { id } = req.params;
-    const { titulo, descripcion, completada } = req.body;
+    const { titulo, descripcion, estado } = req.body;
     const usuarioId = req.headers['id-usuario'];
 
     const tarea = await Tarea.findOne({ where: { id, usuarioId } });
@@ -44,7 +47,15 @@ const actualizarTarea = async (req, res) => {
 
     if (titulo !== undefined) tarea.titulo = titulo;
     if (descripcion !== undefined) tarea.descripcion = descripcion;
-    if (completada !== undefined) tarea.completada = completada;
+    
+    // Para no guardar cualquier estado se verifica que sea uno de los correctos
+    if (estado !== undefined) {
+      const estadosPermitidos = ['pendiente', 'en curso', 'en espera', 'finalizada'];
+      if (!estadosPermitidos.includes(estado)) {
+        return res.status(400).json({ mensaje: 'Estado no válido.' });
+      }
+      tarea.estado = estado;
+    }
 
     await tarea.save();
     res.json(tarea);
