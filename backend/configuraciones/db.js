@@ -1,10 +1,21 @@
-const { Sequelize } = require('sequelize');
+const sqlite3 = require('sqlite3');
+const { open } = require('sqlite');
+const path = require('path');
 
-// Creación de la instancia conectada al archivo local de SQLite
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite',
-  logging: false // Evita textos innecesarios en la terminal al arrancar
-});
+let baseDeDatos = null;
 
-module.exports = sequelize;
+// Función para obtener la conexión única a la base de datos (Patrón Singleton)
+async function obtenerConexion() {
+  if (!baseDeDatos) {
+    baseDeDatos = await open({
+      filename: path.join(__dirname, '../database.sqlite'),
+      driver: sqlite3.Database
+    });
+
+    // Activar claves foráneas en SQLite (para relaciones entre usuarios y tareas)
+    await baseDeDatos.run('PRAGMA foreign_keys = ON');
+  }
+  return baseDeDatos;
+}
+
+module.exports = obtenerConexion;

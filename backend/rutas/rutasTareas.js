@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-// Importamos el controlador de tareas
+// Importamos el controlador
 const { 
   obtenerTareas, 
   crearTarea, 
@@ -9,7 +9,7 @@ const {
   eliminarTarea 
 } = require('../controladores/controladorTareas');
 
-// Rutas expuestas para la gestión de tareas
+// Rutas para la gestión de tareas
 router.get('/', obtenerTareas);
 router.post('/', crearTarea);
 router.put('/:id', actualizarTarea);
